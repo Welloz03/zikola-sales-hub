@@ -4,17 +4,16 @@ import {
   BarChart3, 
   Users, 
   Package, 
-  TrendingUp, 
   DollarSign,
   ShoppingBag,
-  Bell,
-  Settings,
-  Search,
-  Plus
+  Plus,
+  AlertCircle
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { useNavigate } from "react-router-dom";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const metrics = [
     { label: "إجمالي الإيرادات", value: "245,000 ر.س", change: "+12.5%", icon: DollarSign, color: "primary" },
     { label: "عدد العقود النشطة", value: "48", change: "+8", icon: ShoppingBag, color: "secondary" },
@@ -28,67 +27,27 @@ const Dashboard = () => {
     { client: "شركة النجاح التجاري", service: "باقة فضية - SEO", amount: "8,500 ر.س", status: "جديد" },
   ];
 
-  return (
-    <div className="min-h-screen bg-background" dir="rtl">
-      {/* Header */}
-      <header className="bg-card border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-8">
-              <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                Zikola
-              </h1>
-              <nav className="hidden md:flex gap-6">
-                <a href="#" className="text-foreground font-semibold border-b-2 border-primary pb-1">
-                  لوحة التحكم
-                </a>
-                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-                  الخدمات
-                </a>
-                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-                  الباقات
-                </a>
-                <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-                  العقود
-                </a>
-              </nav>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="relative hidden sm:block">
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  placeholder="بحث..." 
-                  className="pr-10 w-64 bg-muted/50 border-border rounded-lg"
-                />
-              </div>
-              <Button size="icon" variant="ghost" className="rounded-lg relative">
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span>
-              </Button>
-              <Button size="icon" variant="ghost" className="rounded-lg">
-                <Settings className="h-5 w-5" />
-              </Button>
-              <div className="flex items-center gap-3 pr-4 border-r border-border">
-                <div className="text-right">
-                  <p className="text-sm font-semibold">أحمد محمد</p>
-                  <p className="text-xs text-muted-foreground">مدير المبيعات</p>
-                </div>
-                <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground font-bold">
-                  أ
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+  const pendingApprovals = 3;
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  return (
+    <DashboardLayout>
+      <div className="space-y-6">
         {/* Welcome Section */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-foreground mb-2">مرحباً، أحمد 👋</h2>
-          <p className="text-muted-foreground">إليك نظرة سريعة على أداء المبيعات اليوم</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold text-foreground mb-2">مرحباً، أحمد 👋</h2>
+            <p className="text-muted-foreground">إليك نظرة سريعة على أداء المبيعات اليوم</p>
+          </div>
+          {pendingApprovals > 0 && (
+            <Card className="px-4 py-3 bg-primary/10 border-primary/20">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-primary" />
+                <span className="font-semibold text-foreground">
+                  {pendingApprovals} طلبات تحتاج موافقة
+                </span>
+              </div>
+            </Card>
+          )}
         </div>
 
         {/* Metrics Grid */}
@@ -157,17 +116,24 @@ const Dashboard = () => {
           <Card className="p-6 bg-gradient-card border-border shadow-card">
             <h3 className="text-xl font-bold text-foreground mb-6">إجراءات سريعة</h3>
             <div className="space-y-3">
-              <Button className="w-full justify-start h-12 bg-gradient-primary text-primary-foreground rounded-xl shadow-glow-orange hover:opacity-90 transition-all">
+              <Button 
+                onClick={() => navigate("/services")}
+                className="w-full justify-start h-12 bg-gradient-primary text-primary-foreground rounded-xl shadow-glow-orange hover:opacity-90 transition-all"
+              >
                 <Plus className="ml-2 h-5 w-5" />
-                عقد جديد
+                إضافة خدمة
+              </Button>
+              <Button 
+                onClick={() => navigate("/packages")}
+                variant="outline" 
+                className="w-full justify-start h-12 border-border hover:bg-muted/50 rounded-xl"
+              >
+                <ShoppingBag className="ml-2 h-5 w-5 text-secondary" />
+                إنشاء باقة
               </Button>
               <Button variant="outline" className="w-full justify-start h-12 border-border hover:bg-muted/50 rounded-xl">
                 <Package className="ml-2 h-5 w-5 text-secondary" />
-                إضافة خدمة
-              </Button>
-              <Button variant="outline" className="w-full justify-start h-12 border-border hover:bg-muted/50 rounded-xl">
-                <ShoppingBag className="ml-2 h-5 w-5 text-secondary" />
-                إنشاء باقة
+                إدارة الكوبونات
               </Button>
               <Button variant="outline" className="w-full justify-start h-12 border-border hover:bg-muted/50 rounded-xl">
                 <BarChart3 className="ml-2 h-5 w-5 text-secondary" />
@@ -200,8 +166,8 @@ const Dashboard = () => {
             </div>
           </Card>
         </div>
-      </main>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 };
 
