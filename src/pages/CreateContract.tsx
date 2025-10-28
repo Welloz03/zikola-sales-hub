@@ -15,7 +15,8 @@ import {
   ArrowRight,
   ArrowLeft,
   Tag,
-  Plus
+  Plus,
+  FileText
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -58,6 +59,76 @@ const CreateContract = () => {
     { id: 1, name: "الدعم الفني المتقدم", price: 5000, description: "دعم فني على مدار الساعة" },
     { id: 2, name: "خدمات CRO", price: 8000, description: "تحسين معدل التحويل" },
   ];
+
+  // Mock contract clauses data (same as in ContractClauses.tsx)
+  const contractClauses = [
+    { 
+      id: 1, 
+      serviceId: 2, 
+      durationMonths: 6, 
+      clauseText: "يتم تسليم تقارير شهرية مفصلة لأداء SEO مع تحليل الكلمات المفتاحية والترتيب في محركات البحث.", 
+      order: 1 
+    },
+    { 
+      id: 2, 
+      serviceId: 2, 
+      durationMonths: 12, 
+      clauseText: "يتم تضمين تحليل منافسين ربع سنوي (QBR) مع توصيات استراتيجية للتحسين.", 
+      order: 1 
+    },
+    { 
+      id: 3, 
+      serviceId: 1, 
+      durationMonths: 12, 
+      clauseText: "يتم توفير 20 تصميم إبداعي شهريًا مع إمكانية التعديلات المجانية.", 
+      order: 2 
+    },
+    { 
+      id: 4, 
+      serviceId: 3, 
+      durationMonths: 6, 
+      clauseText: "إدارة يومية لجميع منصات التواصل الاجتماعي مع إنشاء محتوى مخصص.", 
+      order: 1 
+    },
+    { 
+      id: 5, 
+      serviceId: 4, 
+      durationMonths: 9, 
+      clauseText: "تطوير موقع ويب متجاوب مع جميع الأجهزة مع ضمان سرعة التحميل.", 
+      order: 1 
+    }
+  ];
+
+  // Service mapping for packages
+  const serviceMapping = {
+    1: [1, 2, 3, 4, 5], // الباقة الذهبية - تسويق متكامل
+    2: [2, 3], // الباقة الفضية - تسويق رقمي  
+    3: [1, 4] // باقة تطوير التطبيقات
+  };
+
+  // Get duration in months from package duration string
+  const getDurationMonths = (duration: string) => {
+    if (duration.includes("12")) return 12;
+    if (duration.includes("9")) return 9;
+    if (duration.includes("6")) return 6;
+    if (duration.includes("3")) return 3;
+    return 12; // default
+  };
+
+  // Get automatic contract clauses based on selected package
+  const getAutomaticClauses = () => {
+    if (!selectedPackage) return [];
+    
+    const packageServiceIds = serviceMapping[selectedPackage.id as keyof typeof serviceMapping] || [];
+    const durationMonths = getDurationMonths(selectedPackage.duration);
+    
+    return contractClauses
+      .filter(clause => 
+        packageServiceIds.includes(clause.serviceId) && 
+        clause.durationMonths === durationMonths
+      )
+      .sort((a, b) => a.order - b.order);
+  };
 
   const handleAddonToggle = (addonId: number) => {
     setSelectedAddons(prev =>
@@ -379,6 +450,31 @@ const CreateContract = () => {
                   <span className="text-xl font-bold">الإجمالي</span>
                   <span className="text-2xl font-bold text-primary">{calculateTotal().toLocaleString()} ر.س</span>
                 </div>
+              </div>
+            </Card>
+
+            {/* Automatic Contract Clauses */}
+            <Card className="p-6 bg-gradient-card border-border">
+              <div className="flex items-center gap-2 mb-4">
+                <FileText className="h-6 w-6 text-primary" />
+                <h3 className="text-xl font-bold text-foreground">بنود العقد التلقائية</h3>
+              </div>
+              <div className="space-y-3">
+                {getAutomaticClauses().length > 0 ? (
+                  getAutomaticClauses().map((clause) => (
+                    <div key={clause.id} className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg border border-border">
+                      <Checkbox checked disabled className="mt-1" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-foreground">{clause.clauseText}</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>لا توجد بنود تلقائية متطابقة مع هذه الباقة والمدة</p>
+                  </div>
+                )}
               </div>
             </Card>
 

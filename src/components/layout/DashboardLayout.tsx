@@ -6,6 +6,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import ThemeToggle from "@/components/ThemeToggle";
 import {
   Bell,
   Settings,
@@ -18,6 +20,7 @@ import {
   LogOut,
   AlertCircle,
   CheckCircle2,
+  User,
 } from "lucide-react";
 
 interface DashboardLayoutProps {
@@ -73,6 +76,7 @@ const DashboardLayout = ({ children, role = "admin" }: DashboardLayoutProps) => 
     { label: "لوحة التحكم", path: "/dashboard", icon: LayoutDashboard },
     { label: "الخدمات", path: "/services", icon: Package },
     { label: "الباقات", path: "/packages", icon: Package },
+    { label: "بنود التعاقد", path: "/contract-clauses", icon: FileText },
     { label: "العقود", path: "/contracts", icon: FileText },
     { label: "المستخدمين", path: "/users", icon: Users },
   ];
@@ -195,26 +199,43 @@ const DashboardLayout = ({ children, role = "admin" }: DashboardLayoutProps) => 
                     </Tabs>
                   </SheetContent>
                 </Sheet>
+                
+                {/* INTEGRATED THEME TOGGLE */}
+                <ThemeToggle />
+                
                 <Button size="icon" variant="ghost" className="rounded-lg" onClick={() => navigate('/settings')}>
                   <Settings className="h-5 w-5" />
                 </Button>
-                <div className="flex items-center gap-3 pr-4 border-r border-border">
-                  <div className="text-right">
-                    <p className="text-sm font-semibold">{userName}</p>
-                    <p className="text-xs text-muted-foreground">{userRole}</p>
-                  </div>
-                  <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground font-bold">
-                    {userName.charAt(0)}
-                  </div>
-                </div>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => navigate("/login")}
-                  className="rounded-lg text-destructive hover:bg-destructive/10"
-                >
-                  <LogOut className="h-5 w-5" />
-                </Button>
+                
+                {/* Profile Dropdown Menu */}
+                <DropdownMenu dir="rtl">
+                  <DropdownMenuTrigger asChild>
+                    <div className="flex items-center gap-3 pr-4 border-r border-border cursor-pointer hover:opacity-80 transition-opacity">
+                      <div className="text-right">
+                        <p className="text-sm font-semibold">{userName}</p>
+                        <p className="text-xs text-muted-foreground">{userRole}</p>
+                      </div>
+                      <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground font-bold">
+                        {userName.charAt(0)}
+                      </div>
+                    </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-56 bg-card border-border shadow-card">
+                    <DropdownMenuLabel className="text-right font-bold text-foreground">
+                      {userName} ({userRole})
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator className="bg-border" />
+                    <DropdownMenuItem onClick={() => navigate("/profile")} className="cursor-pointer flex justify-end items-center">
+                      <span>تعديل الملف الشخصي</span>
+                      <User className="mr-2 h-4 w-4 text-primary" />
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator className="bg-border" />
+                    <DropdownMenuItem onClick={() => navigate("/login")} className="cursor-pointer text-destructive focus:text-destructive flex justify-end items-center">
+                      <span>تسجيل الخروج</span>
+                      <LogOut className="mr-2 h-4 w-4" />
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
             </div>
           </div>
         </div>

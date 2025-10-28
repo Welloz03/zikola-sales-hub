@@ -7,8 +7,57 @@ All colors MUST be HSL.
 */
 
 @layer base {
+  /* Default: LIGHT MODE */
   :root {
-    /* Zikola Design System - Dark Theme with Orange & Purple */
+    /* Zikola Design System - Light Theme with Orange & Purple */
+    --background: 0 0% 100%; /* White */
+    --foreground: 220 20% 8%; /* Dark Text */
+
+    --card: 0 0% 98%;
+    --card-foreground: 220 20% 8%;
+
+    --popover: 0 0% 98%;
+    --popover-foreground: 220 20% 8%;
+
+    /* Orange Primary - Deeper for contrast */
+    --primary: 18 95% 40%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Purple Secondary - Deeper for contrast */
+    --secondary: 262 60% 40%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 220 15% 90%;
+    --muted-foreground: 220 10% 40%;
+
+    --accent: 262 60% 80%;
+    --accent-foreground: 220 20% 8%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 15% 85%;
+    --input: 220 15% 90%;
+    --ring: 18 95% 40%;
+
+    --radius: 1rem;
+
+    /* Gradients (Adjusted for Light Background) */
+    --gradient-primary: linear-gradient(135deg, hsl(18 95% 60%), hsl(14 90% 55%));
+    --gradient-secondary: linear-gradient(135deg, hsl(262 60% 65%), hsl(270 65% 60%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(0 0% 98%));
+    
+    /* Shadows (Subtler on light background) */
+    --shadow-glow-orange: 0 4px 16px hsla(18, 95%, 40%, 0.2);
+    --shadow-glow-purple: 0 4px 16px hsla(262, 60%, 40%, 0.2);
+    --shadow-card: 0 2px 12px hsla(220, 20%, 8%, 0.05);
+    
+    /* Transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Dark Mode Overrides */
+  .dark {
     --background: 220 20% 8%;
     --foreground: 0 0% 98%;
 
@@ -18,11 +67,9 @@ All colors MUST be HSL.
     --popover: 220 18% 10%;
     --popover-foreground: 0 0% 98%;
 
-    /* Orange Primary */
     --primary: 18 95% 60%;
     --primary-foreground: 0 0% 100%;
-    
-    /* Purple Secondary */
+
     --secondary: 262 60% 65%;
     --secondary-foreground: 0 0% 100%;
 
@@ -39,20 +86,15 @@ All colors MUST be HSL.
     --input: 220 15% 18%;
     --ring: 18 95% 60%;
 
-    --radius: 1rem;
-
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(18 95% 60%), hsl(14 90% 55%));
     --gradient-secondary: linear-gradient(135deg, hsl(262 60% 65%), hsl(270 65% 60%));
     --gradient-card: linear-gradient(145deg, hsl(220 18% 14%), hsl(220 18% 10%));
-    
+
     /* Shadows */
     --shadow-glow-orange: 0 8px 32px hsla(18, 95%, 60%, 0.3);
     --shadow-glow-purple: 0 8px 32px hsla(262, 60%, 65%, 0.3);
     --shadow-card: 0 4px 24px hsla(0, 0%, 0%, 0.4);
-    
-    /* Transitions */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 
@@ -75,15 +117,5 @@ All colors MUST be HSL.
   /* Smooth scrolling */
   html {
     scroll-behavior: smooth;
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply bg-background text-foreground;
   }
 }
