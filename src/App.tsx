@@ -8,6 +8,9 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Services from "./pages/Services";
 import Packages from "./pages/Packages";
+import Contracts from "./pages/Contracts";
+import Users from "./pages/Users";
+import Settings from "./pages/Settings";
 import AgentDashboard from "./pages/AgentDashboard";
 import CreateContract from "./pages/CreateContract";
 import NotFound from "./pages/NotFound";
@@ -28,6 +31,9 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/services" element={<Services />} />
           <Route path="/packages" element={<Packages />} />
+          <Route path="/contracts" element={<Contracts />} />
+          <Route path="/users" element={<Users />} />
+          <Route path="/settings" element={<Settings />} />
           
           {/* Agent Routes */}
           <Route path="/agent/dashboard" element={<AgentDashboard />} />
