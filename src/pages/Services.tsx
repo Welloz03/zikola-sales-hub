@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,24 +7,84 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Edit, Trash2, Users, Search } from "lucide-react";
+import { Plus, Edit, Trash2, Users, Search, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import { apiService } from "@/lib/api";
 
 const Services = () => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<any>(null);
 
-  const services = [
-    { id: 1, name: "إدارة وسائل التواصل الاجتماعي", department: "SMM", monthlyCost: 5000, subscribers: 23 },
-    { id: 2, name: "تحسين محركات البحث SEO", department: "SEO", monthlyCost: 8000, subscribers: 18 },
-    { id: 3, name: "تصميم واجهة المستخدم UI/UX", department: "UI/UX", monthlyCost: 12000, subscribers: 15 },
-    { id: 4, name: "تطوير تطبيقات الويب", department: "Web Dev", monthlyCost: 15000, subscribers: 12 },
-    { id: 5, name: "الإعلانات الإبداعية بالذكاء الاصطناعي", department: "AI Creative", monthlyCost: 7000, subscribers: 20 },
-    { id: 6, name: "إدارة المؤثرين", department: "Influencer", monthlyCost: 6000, subscribers: 14 },
-  ];
+  // Fetch services using React Query
+  const { data: services = [], isLoading, error } = useQuery({
+    queryKey: ['services'],
+    queryFn: apiService.getServices,
+  });
+
+  // Create service mutation
+  const createServiceMutation = useMutation({
+    mutationFn: apiService.createService,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['services'] });
+      toast({
+        title: "تمت إضافة الخدمة",
+        description: "تم إضافة الخدمة بنجاح",
+      });
+      setIsDialogOpen(false);
+      setEditingService(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "خطأ في إضافة الخدمة",
+        description: error.response?.data?.message || "حدث خطأ أثناء إضافة الخدمة",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update service mutation
+  const updateServiceMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => apiService.updateService(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['services'] });
+      toast({
+        title: "تم تحديث الخدمة",
+        description: "تم تحديث الخدمة بنجاح",
+      });
+      setIsDialogOpen(false);
+      setEditingService(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "خطأ في تحديث الخدمة",
+        description: error.response?.data?.message || "حدث خطأ أثناء تحديث الخدمة",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete service mutation
+  const deleteServiceMutation = useMutation({
+    mutationFn: apiService.deleteService,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['services'] });
+      toast({
+        title: "تم حذف الخدمة",
+        description: "تم حذف الخدمة بنجاح",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "خطأ في حذف الخدمة",
+        description: error.response?.data?.message || "حدث خطأ أثناء حذف الخدمة",
+        variant: "destructive",
+      });
+    },
+  });
 
   const departments = ["SMM", "SEO", "UI/UX", "Web Dev", "AI Creative", "Influencer", "Media Buying", "Branding"];
 
@@ -31,22 +92,23 @@ const Services = () => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
-    toast({
-      title: editingService ? "تم تحديث الخدمة" : "تمت إضافة الخدمة",
-      description: `تم ${editingService ? "تحديث" : "إضافة"} الخدمة بنجاح`,
-    });
-    
-    setIsDialogOpen(false);
-    setEditingService(null);
+    const serviceData = {
+      name: formData.get('serviceName') as string,
+      department: formData.get('department') as string,
+      description: formData.get('description') as string,
+      monthlyCost: parseFloat(formData.get('monthlyCost') as string),
+    };
+
+    if (editingService) {
+      updateServiceMutation.mutate({ id: editingService.id, data: serviceData });
+    } else {
+      createServiceMutation.mutate(serviceData);
+    }
   };
 
   const handleDelete = (id: number, name: string) => {
     if (confirm(`هل أنت متأكد من حذف خدمة "${name}"؟`)) {
-      toast({
-        title: "تم حذف الخدمة",
-        description: "تم حذف الخدمة بنجاح",
-        variant: "destructive",
-      });
+      deleteServiceMutation.mutate(id);
     }
   };
 
@@ -135,9 +197,17 @@ const Services = () => {
                 <div className="flex gap-3 pt-4">
                   <Button
                     type="submit"
-                    className="flex-1 bg-gradient-primary text-primary-foreground rounded-lg hover:opacity-90"
+                    disabled={createServiceMutation.isPending || updateServiceMutation.isPending}
+                    className="flex-1 bg-gradient-primary text-primary-foreground rounded-lg hover:opacity-90 disabled:opacity-50"
                   >
-                    {editingService ? "تحديث" : "إضافة"}
+                    {(createServiceMutation.isPending || updateServiceMutation.isPending) ? (
+                      <>
+                        <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                        {editingService ? "جاري التحديث..." : "جاري الإضافة..."}
+                      </>
+                    ) : (
+                      editingService ? "تحديث" : "إضافة"
+                    )}
                   </Button>
                   <Button
                     type="button"
@@ -169,9 +239,38 @@ const Services = () => {
           </div>
         </Card>
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <Card key={i} className="p-6 bg-gradient-card border-border shadow-card">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span className="text-muted-foreground">جاري التحميل...</span>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <Card className="p-6 bg-destructive/10 border-destructive/20">
+            <div className="text-center">
+              <p className="text-destructive font-semibold">خطأ في تحميل الخدمات</p>
+              <p className="text-destructive/80 text-sm mt-1">
+                {error instanceof Error ? error.message : "حدث خطأ غير متوقع"}
+              </p>
+            </div>
+          </Card>
+        )}
+
         {/* Services Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredServices.map((service) => (
+        {!isLoading && !error && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredServices.map((service) => (
             <Card
               key={service.id}
               className="p-6 bg-gradient-card border-border shadow-card hover:shadow-glow-orange transition-all"
@@ -210,6 +309,7 @@ const Services = () => {
                       setEditingService(service);
                       setIsDialogOpen(true);
                     }}
+                    disabled={updateServiceMutation.isPending || deleteServiceMutation.isPending}
                   >
                     <Edit className="ml-1 h-4 w-4" />
                     تعديل
@@ -219,14 +319,16 @@ const Services = () => {
                     size="sm"
                     className="rounded-lg border-destructive/50 text-destructive hover:bg-destructive/10"
                     onClick={() => handleDelete(service.id, service.name)}
+                    disabled={updateServiceMutation.isPending || deleteServiceMutation.isPending}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
             </Card>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

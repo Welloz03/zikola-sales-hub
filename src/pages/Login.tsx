@@ -5,16 +5,47 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Mail, Lock, ArrowRight } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiService, tokenManager } from "@/lib/api";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [remember, setRemember] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock login - navigate to dashboard
-    navigate("/dashboard");
+    setIsLoading(true);
+
+    try {
+      const response = await apiService.login(email, password);
+      
+      // Store the JWT token
+      tokenManager.setToken(response.token, remember);
+      
+      // Determine user role and navigate accordingly
+      const userRole = response.user?.role || 'agent';
+      const dashboardPath = userRole === 'admin' ? '/dashboard' : '/agent/dashboard';
+      
+      toast({
+        title: "تم تسجيل الدخول بنجاح",
+        description: `مرحباً ${response.user?.name || 'بك'}`,
+      });
+      
+      navigate(dashboardPath);
+    } catch (error: any) {
+      console.error('Login error:', error);
+      toast({
+        title: "فشل تسجيل الدخول",
+        description: error.response?.data?.message || "البريد الإلكتروني أو كلمة المرور غير صحيحة",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -78,7 +109,13 @@ const Login = () => {
                 نسيت كلمة المرور؟
               </a>
               <div className="flex items-center gap-2">
-                <input type="checkbox" id="remember" className="rounded" />
+                <input 
+                  type="checkbox" 
+                  id="remember" 
+                  className="rounded" 
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                />
                 <label htmlFor="remember" className="text-muted-foreground">تذكرني</label>
               </div>
             </div>
@@ -86,9 +123,10 @@ const Login = () => {
             {/* Login Button */}
             <Button
               type="submit"
-              className="w-full h-12 bg-gradient-primary text-primary-foreground rounded-xl shadow-glow-orange hover:opacity-90 transition-all text-lg font-semibold group"
+              disabled={isLoading}
+              className="w-full h-12 bg-gradient-primary text-primary-foreground rounded-xl shadow-glow-orange hover:opacity-90 transition-all text-lg font-semibold group disabled:opacity-50"
             >
-              <span>دخول</span>
+              <span>{isLoading ? "جاري تسجيل الدخول..." : "دخول"}</span>
               <ArrowRight className="mr-2 h-5 w-5 group-hover:-translate-x-1 transition-transform" />
             </Button>
 

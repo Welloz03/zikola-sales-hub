@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -8,15 +9,27 @@ import {
   Users,
   Plus,
   Clock,
-  CheckCircle2
+  CheckCircle2,
+  Loader2
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import { apiService } from "@/lib/api";
 
 const AgentDashboard = () => {
   const navigate = useNavigate();
 
-  const agentStats = {
+  // Mock user ID - in real app, this would come from auth context
+  const userId = "agent-123";
+
+  // Fetch agent metrics using React Query
+  const { data: agentData, isLoading: agentLoading, error: agentError } = useQuery({
+    queryKey: ['agent-metrics', userId],
+    queryFn: () => apiService.getAgentMetrics(userId),
+  });
+
+  // Default agent stats
+  const defaultAgentStats = {
     monthlySales: 12,
     targetSales: 20,
     totalRevenue: 145000,
@@ -24,7 +37,8 @@ const AgentDashboard = () => {
     activeCustomers: 8,
   };
 
-  const recentContracts = [
+  const agentStats = agentData?.stats || defaultAgentStats;
+  const recentContracts = agentData?.recentContracts || [
     { 
       id: 1, 
       client: "شركة التقنية المتقدمة", 
@@ -51,7 +65,7 @@ const AgentDashboard = () => {
     },
   ];
 
-  const assignedPackages = [
+  const assignedPackages = agentData?.assignedPackages || [
     { id: 1, name: "الباقة الذهبية - تسويق متكامل", price: 120000, services: 5 },
     { id: 2, name: "الباقة الفضية - تسويق رقمي", price: 45000, services: 3 },
     { id: 3, name: "باقة تطوير التطبيقات", price: 135000, services: 4 },
@@ -79,7 +93,15 @@ const AgentDashboard = () => {
 
         {/* Performance Card */}
         <Card className="p-6 bg-gradient-card border-border shadow-card">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {agentLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <span className="text-muted-foreground">جاري تحميل البيانات...</span>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-2 space-y-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -143,6 +165,7 @@ const AgentDashboard = () => {
               <p className="text-sm font-semibold text-foreground">من الهدف الشهري</p>
             </div>
           </div>
+          )}
         </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
@@ -7,27 +8,37 @@ import {
   DollarSign,
   ShoppingBag,
   Plus,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import { apiService } from "@/lib/api";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const metrics = [
+
+  // Fetch admin metrics using React Query
+  const { data: metricsData, isLoading: metricsLoading, error: metricsError } = useQuery({
+    queryKey: ['admin-metrics'],
+    queryFn: apiService.getAdminMetrics,
+  });
+
+  // Default metrics structure
+  const defaultMetrics = [
     { label: "إجمالي الإيرادات", value: "245,000 ر.س", change: "+12.5%", icon: DollarSign, color: "primary" },
     { label: "عدد العقود النشطة", value: "48", change: "+8", icon: ShoppingBag, color: "secondary" },
     { label: "عدد العملاء", value: "156", change: "+23", icon: Users, color: "primary" },
     { label: "الخدمات المقدمة", value: "12", change: "جديد", icon: Package, color: "secondary" },
   ];
 
-  const recentActivity = [
+  const metrics = metricsData || defaultMetrics;
+  const recentActivity = metricsData?.recentActivity || [
     { client: "شركة التقنية المتقدمة", service: "باقة ذهبية - تسويق رقمي", amount: "15,000 ر.س", status: "مكتمل" },
     { client: "مؤسسة الابتكار", service: "تطوير تطبيق أصلي", amount: "28,000 ر.س", status: "قيد التنفيذ" },
     { client: "شركة النجاح التجاري", service: "باقة فضية - SEO", amount: "8,500 ر.س", status: "جديد" },
   ];
-
-  const pendingApprovals = 3;
+  const pendingApprovals = metricsData?.pendingApprovals || 3;
 
   return (
     <DashboardLayout>
@@ -52,7 +63,17 @@ const Dashboard = () => {
 
         {/* Metrics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {metrics.map((metric, index) => (
+          {metricsLoading ? (
+            [...Array(4)].map((_, i) => (
+              <Card key={i} className="p-6 bg-gradient-card border-border shadow-card">
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span className="text-muted-foreground">جاري التحميل...</span>
+                </div>
+              </Card>
+            ))
+          ) : (
+            metrics.map((metric, index) => (
             <Card 
               key={index} 
               className={`p-6 bg-gradient-card border-border shadow-card hover:shadow-${metric.color === 'primary' ? 'glow-orange' : 'glow-purple'} transition-all cursor-pointer`}
@@ -70,7 +91,8 @@ const Dashboard = () => {
                 <p className="text-sm text-muted-foreground">{metric.label}</p>
               </div>
             </Card>
-          ))}
+            ))
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

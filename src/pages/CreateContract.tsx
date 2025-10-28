@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,44 +17,49 @@ import {
   ArrowLeft,
   Tag,
   Plus,
-  FileText
+  FileText,
+  Loader2
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import { apiService } from "@/lib/api";
 
 const CreateContract = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [step, setStep] = useState(1);
   const [selectedPackage, setSelectedPackage] = useState<any>(null);
   const [selectedAddons, setSelectedAddons] = useState<number[]>([]);
   const [couponCode, setCouponCode] = useState("");
   const [discount, setDiscount] = useState(0);
 
-  const packages = [
-    {
-      id: 1,
-      name: "الباقة الذهبية - تسويق متكامل",
-      price: 120000,
-      duration: "12 شهر",
-      services: ["إدارة وسائل التواصل الاجتماعي", "تحسين محركات البحث SEO", "تصميم UI/UX", "إعلانات ممولة", "تقارير شهرية"],
+  // Fetch packages using React Query
+  const { data: packages = [], isLoading: packagesLoading } = useQuery({
+    queryKey: ['packages'],
+    queryFn: apiService.getPackages,
+  });
+
+  // Create contract mutation
+  const createContractMutation = useMutation({
+    mutationFn: apiService.createContract,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contracts'] });
+      toast({
+        title: "تم إنشاء العقد",
+        description: "تم إرسال العقد للمراجعة بنجاح",
+      });
+      navigate("/agent/dashboard");
     },
-    {
-      id: 2,
-      name: "الباقة الفضية - تسويق رقمي",
-      price: 45000,
-      duration: "6 أشهر",
-      services: ["إدارة وسائل التواصل الاجتماعي", "تحسين محركات البحث SEO", "تقارير شهرية"],
+    onError: (error: any) => {
+      toast({
+        title: "خطأ في إنشاء العقد",
+        description: error.response?.data?.message || "حدث خطأ أثناء إنشاء العقد",
+        variant: "destructive",
+      });
     },
-    {
-      id: 3,
-      name: "باقة تطوير التطبيقات",
-      price: 135000,
-      duration: "9 أشهر",
-      services: ["تطوير تطبيق أصلي", "تصميم UI/UX", "اختبار الجودة", "نشر على المتاجر", "صيانة 3 أشهر"],
-    },
-  ];
+  });
 
   const addons = [
     { id: 1, name: "الدعم الفني المتقدم", price: 5000, description: "دعم فني على مدار الساعة" },
@@ -172,11 +178,20 @@ const CreateContract = () => {
   };
 
   const handleSubmit = () => {
-    toast({
-      title: "تم إنشاء العقد",
-      description: "تم إرسال العقد للمراجعة بنجاح",
-    });
-    navigate("/agent/dashboard");
+    if (!selectedPackage) return;
+
+    const contractData = {
+      packageId: selectedPackage.id,
+      customerName: (document.getElementById('customerName') as HTMLInputElement)?.value || '',
+      customerEmail: (document.getElementById('email') as HTMLInputElement)?.value || '',
+      customerPhone: (document.getElementById('phone') as HTMLInputElement)?.value || '',
+      companyName: (document.getElementById('company') as HTMLInputElement)?.value || '',
+      selectedAddons: selectedAddons,
+      couponCode: couponCode,
+      calculatedTotal: calculateTotal(),
+    };
+
+    createContractMutation.mutate(contractData);
   };
 
   return (
@@ -218,7 +233,19 @@ const CreateContract = () => {
             </div>
 
             <div className="grid grid-cols-1 gap-4">
-              {packages.map((pkg) => (
+              {packagesLoading ? (
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <Card key={i} className="p-6 bg-gradient-card border-border">
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <span className="text-muted-foreground">جاري تحميل الباقات...</span>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                packages.map((pkg) => (
                 <Card
                   key={pkg.id}
                   onClick={() => setSelectedPackage(pkg)}
@@ -260,7 +287,8 @@ const CreateContract = () => {
                     )}
                   </div>
                 </Card>
-              ))}
+                ))
+              )}
             </div>
 
             <Button
@@ -496,10 +524,20 @@ const CreateContract = () => {
               </Button>
               <Button
                 onClick={handleSubmit}
-                className="flex-1 h-12 bg-gradient-secondary text-secondary-foreground rounded-xl shadow-glow-purple hover:opacity-90"
+                disabled={createContractMutation.isPending}
+                className="flex-1 h-12 bg-gradient-secondary text-secondary-foreground rounded-xl shadow-glow-purple hover:opacity-90 disabled:opacity-50"
               >
-                <span>إرسال للمراجعة</span>
-                <CheckCircle2 className="mr-2 h-5 w-5" />
+                {createContractMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    <span>جاري الإرسال...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>إرسال للمراجعة</span>
+                    <CheckCircle2 className="mr-2 h-5 w-5" />
+                  </>
+                )}
               </Button>
             </div>
           </div>
