@@ -1,0 +1,214 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum UserRole {
+  admin
+  agent
+}
+
+enum ContractStatus {
+  pending_review
+  approved
+  rejected
+  completed
+}
+
+// Models
+model Company {
+  company_id    String   @id @default(cuid())
+  name          String
+  description   String?
+  contact_email String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  // Relations
+  users           User[]
+  company_packages CompanyPackage[]
+
+  @@map("companies")
+}
+
+model User {
+  user_id       String   @id @default(cuid())
+  email         String   @unique
+  password_hash String
+  role          UserRole
+  name          String
+  target_sales  Decimal? @db.Decimal(15, 2)
+  is_active     Boolean  @default(true)
+  company_id    String
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  // Relations
+  company           Company           @relation(fields: [company_id], references: [company_id], onDelete: Cascade)
+  contracts_created Contract[]
+  audit_logs        ContractAuditLog[]
+
+  @@map("users")
+}
+
+model Service {
+  service_id   String   @id @default(cuid())
+  name         String
+  monthly_cost Decimal  @db.Decimal(10, 2)
+  department   String?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  // Relations
+  package_services PackageService[]
+  contract_clauses ContractClause[]
+
+  @@map("services")
+}
+
+model Package {
+  package_id      String   @id @default(cuid())
+  name            String
+  type            String
+  duration_months Int
+  total_price     Decimal  @db.Decimal(15, 2)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  // Relations
+  package_services PackageService[]
+  company_packages CompanyPackage[]
+  contracts        Contract[]
+
+  @@map("packages")
+}
+
+model PackageService {
+  package_service_id String @id @default(cuid())
+  package_id         String
+  service_id         String
+
+  // Relations
+  package Package @relation(fields: [package_id], references: [package_id], onDelete: Cascade)
+  service Service @relation(fields: [service_id], references: [service_id], onDelete: Cascade)
+
+  @@unique([package_id, service_id])
+  @@map("package_services")
+}
+
+model CompanyPackage {
+  comp_pkg_id String @id @default(cuid())
+  company_id  String
+  package_id  String
+
+  // Relations
+  company Company @relation(fields: [company_id], references: [company_id], onDelete: Cascade)
+  package Package @relation(fields: [package_id], references: [package_id], onDelete: Cascade)
+
+  @@unique([company_id, package_id])
+  @@map("company_packages")
+}
+
+model ContractClause {
+  clause_id       String   @id @default(cuid())
+  clause_text     String
+  duration_months Int
+  sort_order      Int
+  service_id       String
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  // Relations
+  service Service @relation(fields: [service_id], references: [service_id], onDelete: Cascade)
+
+  @@map("contract_clauses")
+}
+
+model Contract {
+  contract_id      String         @id @default(cuid())
+  client_name      String
+  client_email     String?
+  client_phone     String?
+  total_amount     Decimal        @db.Decimal(15, 2)
+  status           ContractStatus @default(pending_review)
+  contract_clauses String[]       // Array of clause texts
+  sales_agent_id   String
+  package_id       String
+  created_at       DateTime       @default(now())
+  updated_at       DateTime       @updatedAt
+
+  // Relations
+  sales_agent     User             @relation(fields: [sales_agent_id], references: [user_id], onDelete: Cascade)
+  package         Package          @relation(fields: [package_id], references: [package_id], onDelete: Cascade)
+  contract_addons ContractAddon[]
+  audit_logs      ContractAuditLog[]
+
+  @@map("contracts")
+}
+
+model ContractAuditLog {
+  log_id      String   @id @default(cuid())
+  contract_id String
+  user_id     String
+  timestamp   DateTime @default(now())
+  details     String   // JSON string or text description
+  action      String
+
+  // Relations
+  contract Contract @relation(fields: [contract_id], references: [contract_id], onDelete: Cascade)
+  user     User     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@map("contract_audit_logs")
+}
+
+model Coupon {
+  coupon_id     String    @id @default(cuid())
+  code          String    @unique
+  discount_value Decimal  @db.Decimal(5, 2) // Percentage or fixed amount
+  expiry_date   DateTime?
+  usage_limit   Int?
+  used_count    Int       @default(0)
+  is_active     Boolean   @default(true)
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  @@map("coupons")
+}
+
+model Addon {
+  addon_id    String   @id @default(cuid())
+  name        String
+  price       Decimal  @db.Decimal(10, 2)
+  description String?
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  contract_addons ContractAddon[]
+
+  @@map("addons")
+}
+
+model ContractAddon {
+  contract_addon_id String  @id @default(cuid())
+  contract_id       String
+  addon_id          String
+  is_approved       Boolean @default(false)
+  created_at        DateTime @default(now())
+
+  // Relations
+  contract Contract @relation(fields: [contract_id], references: [contract_id], onDelete: Cascade)
+  addon    Addon    @relation(fields: [addon_id], references: [addon_id], onDelete: Cascade)
+
+  @@unique([contract_id, addon_id])
+  @@map("contract_addons")
+}
